@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Membership App - ระบบสมาชิก</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#0061a4",
+          "primary-container": "#2196f3",
+          "primary-fixed": "#d1e4ff",
+          "primary-fixed-dim": "#9ecaff",
+          "on-primary": "#ffffff",
+          "on-primary-fixed": "#001d36",
+          "on-primary-fixed-variant": "#00497d",
+          "on-primary-container": "#002c4f",
+          "secondary": "#526069",
+          "secondary-container": "#d3e2ed",
+          "secondary-fixed": "#d6e5ef",
+          "on-secondary": "#ffffff",
+          "on-secondary-container": "#56656e",
+          "tertiary": "#904d00",
+          "tertiary-container": "#db7900",
+          "tertiary-fixed": "#ffdcc2",
+          "on-tertiary": "#ffffff",
+          "on-tertiary-fixed": "#2e1500",
+          "background": "#faf9f9",
+          "surface": "#faf9f9",
+          "surface-bright": "#faf9f9",
+          "surface-dim": "#dadada",
+          "surface-container-lowest": "#ffffff",
+          "surface-container-low": "#f4f3f3",
+          "surface-container": "#efeeed",
+          "surface-container-high": "#e9e8e8",
+          "surface-container-highest": "#e3e2e2",
+          "surface-variant": "#e3e2e2",
+          "on-surface": "#1a1c1c",
+          "on-surface-variant": "#404752",
+          "on-background": "#1a1c1c",
+          "outline": "#707883",
+          "outline-variant": "#bfc7d4",
+          "inverse-surface": "#2f3131",
+          "inverse-on-surface": "#f1f0f0",
+          "error": "#ba1a1a",
+          "error-container": "#ffdad6",
+          "on-error": "#ffffff",
+          "success": "#1a7a4a",
+          "success-container": "#b7f5d5",
+        },
+        fontFamily: {
+          "sans": ["Manrope", "sans-serif"],
+        },
+        spacing: {
+          "xs": "4px", "sm": "8px", "md": "16px", "lg": "24px", "xl": "32px",
+          "gutter": "16px", "container-margin": "24px",
+        },
+        borderRadius: {
+          "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * { font-family: 'Manrope', sans-serif; }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+  .mat-fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+  /* Page transitions */
+  .page { display: none; opacity: 0; transform: translateY(8px); transition: opacity 0.25s ease, transform 0.25s ease; }
+  .page.active { display: flex; opacity: 1; transform: translateY(0); }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    opacity: 0; z-index: 9999;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* Loading spinner */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Nav active indicator */
+  .nav-item { position: relative; cursor: pointer; }
+  .nav-item.active::before {
+    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+    width: 3px; background: #0061a4; border-radius: 0 4px 4px 0;
+  }
+
+  /* Input focus ring */
+  .field-input {
+    width: 100%; padding: 10px 12px; border: 1.5px solid #bfc7d4; border-radius: 8px;
+    background: #faf9f9; color: #1a1c1c; font-size: 15px; font-family: 'Manrope', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  .field-input:focus { border-color: #0061a4; box-shadow: 0 0 0 3px rgba(0,97,164,0.12); }
+  .field-input.error { border-color: #ba1a1a; box-shadow: 0 0 0 3px rgba(186,26,26,0.1); }
+  .field-input:disabled { opacity: 0.55; background: #f4f3f3; }
+
+  /* Card hover */
+  .stat-card { transition: box-shadow 0.2s, transform 0.2s; }
+  .stat-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1); transform: translateY(-1px); }
+
+  /* Toggle switch */
+  .toggle-track {
+    width: 44px; height: 24px; background: #bfc7d4; border-radius: 12px;
+    position: relative; cursor: pointer; transition: background 0.2s;
+  }
+  .toggle-track.on { background: #0061a4; }
+  .toggle-thumb {
+    width: 18px; height: 18px; background: white; border-radius: 50%;
+    position: absolute; top: 3px; left: 3px;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-track.on .toggle-thumb { transform: translateX(20px); }
+
+  /* Activity pulse */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .live-dot { width:8px;height:8px;background:#1a7a4a;border-radius:50%;animation:pulse 2s infinite; }
+
+  /* Sheet config callout */
+  .callout { background: #fff8e1; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; }
+
+  body { min-height: 100dvh; background: #faf9f9; }
+</style>
+</head>
+<body class="text-on-background antialiased">
+
+<!-- ============================================================ TOAST ============================================================ -->
+<div id="toast" class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium min-w-[260px] max-w-sm">
+  <span id="toast-icon" class="material-symbols-outlined text-xl">check_circle</span>
+  <span id="toast-msg">สำเร็จ</span>
+</div>
+
+<!-- ============================================================ APP SHELL ============================================================ -->
+<div class="flex min-h-screen relative">
+
+  <!-- SIDEBAR (md+) -->
+  <aside id="sidebar" class="hidden md:flex w-[260px] h-screen flex-col bg-surface-container-lowest border-r border-outline-variant sticky top-0 shrink-0 z-20">
+    <div class="px-6 pt-6 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-white text-[18px]">group</span>
+        </div>
+        <span class="font-extrabold text-on-surface text-[17px] tracking-tight">MemberApp</span>
+      </div>
+    </div>
+    <nav class="flex-1 flex flex-col gap-1 px-3 mt-2" id="sidebar-nav">
+      <button onclick="navigate('page-login')" data-page="page-login" class="nav-item flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">login</span> เข้าสู่ระบบ
+      </button>
+      <button onclick="navigate('page-register')" data-page="page-register" class="nav-item flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">person_add</span> สมัครสมาชิก
+      </button>
+      <button onclick="navigate('page-dashboard')" data-page="page-dashboard" class="nav-item flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">dashboard</span> แดชบอร์ด
+      </button>
+      <button onclick="navigate('page-profile')" data-page="page-profile" class="nav-item flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">person</span> โปรไฟล์
+      </button>
+      <button onclick="navigate('page-settings')" data-page="page-settings" class="nav-item flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">settings</span> ตั้งค่า
+      </button>
+      <div class="border-t border-outline-variant my-2 mx-1"></div>
+      <button onclick="navigate('page-config')" data-page="page-config" class="nav-item flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant hover:bg-surface-container transition-colors text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">integration_instructions</span> ตั้งค่า Google Sheet
+      </button>
+    </nav>
+    <div class="px-5 py-4 text-xs text-on-surface-variant border-t border-outline-variant">
+      ข้อมูลถูกบันทึกใน Google Sheets
+    </div>
+  </aside>
+
+  <!-- MOBILE TOP BAR -->
+  <div class="fixed top-0 left-0 right-0 h-14 bg-surface-container-lowest border-b border-outline-variant flex items-center px-4 gap-3 z-30 md:hidden shadow-sm">
+    <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+      <span class="material-symbols-outlined text-white text-[16px]">group</span>
+    </div>
+    <span class="font-extrabold text-on-surface text-base flex-1">MemberApp</span>
+    <button onclick="toggleMobileMenu()" class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-surface-container">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+  </div>
+
+  <!-- MOBILE MENU OVERLAY -->
+  <div id="mobile-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"></div>
+  <div id="mobile-menu" class="fixed top-0 left-0 h-full w-[240px] bg-surface-container-lowest z-50 transform -translate-x-full transition-transform duration-300 md:hidden shadow-xl">
+    <div class="px-5 pt-5 pb-3 flex items-center gap-3 border-b border-outline-variant">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+        <span class="material-symbols-outlined text-white text-[16px]">group</span>
+      </div>
+      <span class="font-extrabold text-on-surface text-base">MemberApp</span>
+    </div>
+    <nav class="flex flex-col gap-1 p-3">
+      <button onclick="navigate('page-login');toggleMobileMenu()" class="flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">login</span> เข้าสู่ระบบ
+      </button>
+      <button onclick="navigate('page-register');toggleMobileMenu()" class="flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">person_add</span> สมัครสมาชิก
+      </button>
+      <button onclick="navigate('page-dashboard');toggleMobileMenu()" class="flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">dashboard</span> แดชบอร์ด
+      </button>
+      <button onclick="navigate('page-profile');toggleMobileMenu()" class="flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">person</span> โปรไฟล์
+      </button>
+      <button onclick="navigate('page-settings');toggleMobileMenu()" class="flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">settings</span> ตั้งค่า
+      </button>
+      <div class="border-t border-outline-variant my-2 mx-1"></div>
+      <button onclick="navigate('page-config');toggleMobileMenu()" class="flex items-center gap-3 px-3 h-11 rounded-lg text-left w-full text-on-surface-variant text-sm font-medium">
+        <span class="material-symbols-outlined text-[20px]">integration_instructions</span> ตั้งค่า Google Sheet
+      </button>
+    </nav>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 pt-14 md:pt-0 min-h-screen overflow-y-auto">
+
+    <!-- ======================================================== PAGE: LOGIN ======================================================== -->
+    <div id="page-login" class="page active flex-col items-center justify-center min-h-screen p-6 bg-background relative overflow-hidden">
+      <div class="absolute top-[-8%] left-[-4%] w-80 h-80 bg-primary-fixed rounded-full filter blur-3xl opacity-40 pointer-events-none"></div>
+      <div class="absolute bottom-[-8%] right-[-4%] w-80 h-80 bg-secondary-fixed rounded-full filter blur-3xl opacity-30 pointer-events-none"></div>
+      <div class="bg-surface-container-lowest rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.10)] w-full max-w-[420px] p-8 relative z-10 border-t-4 border-primary">
+        <div class="flex flex-col items-center mb-7">
+          <div class="w-16 h-16 bg-primary-fixed rounded-full flex items-center justify-center mb-4">
+            <span class="material-symbols-outlined text-3xl text-on-primary-fixed-variant">lock_person</span>
+          </div>
+          <h1 class="text-[26px] font-bold text-on-surface mb-1">เข้าสู่ระบบ</h1>
+          <p class="text-sm text-on-surface-variant text-center">กรุณากรอกข้อมูลประจำตัวเพื่อเข้าใช้งานระบบ</p>
+        </div>
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-on-surface">อีเมล</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">mail</span>
+              <input id="login-email" class="field-input pl-10" type="email" placeholder="name@example.com"/>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-on-surface">รหัสผ่าน</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">key</span>
+              <input id="login-password" class="field-input pl-10 pr-10" type="password" placeholder="••••••••"/>
+              <button type="button" onclick="togglePwd('login-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant hover:text-primary">
+                <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+              </button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-on-surface-variant">
+              <input id="login-remember" type="checkbox" class="rounded border-outline-variant text-primary"/> จดจำฉัน
+            </label>
+            <a href="#" class="text-sm text-primary font-medium hover:underline">ลืมรหัสผ่าน?</a>
+          </div>
+          <button id="login-btn" onclick="handleLogin()" class="w-full bg-primary text-white py-3 rounded-xl font-semibold text-sm flex justify-center items-center gap-2 hover:bg-[#00497d] transition-colors mt-1">
+            <span>เข้าสู่ระบบ</span>
+            <span class="material-symbols-outlined text-[20px]">login</span>
+          </button>
+        </div>
+        <div class="mt-6 text-center text-sm text-on-surface-variant">
+          ยังไม่มีบัญชี?
+          <button onclick="navigate('page-register')" class="text-primary font-semibold ml-1 hover:underline">สมัครสมาชิกใหม่</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== PAGE: REGISTER ======================================================== -->
+    <div id="page-register" class="page flex-col items-center justify-center min-h-screen p-6 bg-background relative overflow-hidden">
+      <div class="absolute top-[-8%] right-[-4%] w-80 h-80 bg-secondary-fixed rounded-full filter blur-3xl opacity-40 pointer-events-none"></div>
+      <div class="bg-surface-container-lowest rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.10)] w-full max-w-[460px] p-8 relative z-10 border-t-4 border-primary">
+        <div class="flex flex-col items-center mb-7">
+          <div class="w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center mb-4">
+            <span class="material-symbols-outlined text-3xl text-primary">person_add</span>
+          </div>
+          <h1 class="text-[24px] font-bold text-on-surface mb-1">สมัครสมาชิกใหม่</h1>
+          <p class="text-sm text-on-surface-variant text-center">กรอกข้อมูลเพื่อสร้างบัญชีของคุณ</p>
+        </div>
+        <div class="flex flex-col gap-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-on-surface">ชื่อจริง</label>
+              <input id="reg-firstname" class="field-input" type="text" placeholder="ชื่อจริง"/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-on-surface">นามสกุล</label>
+              <input id="reg-lastname" class="field-input" type="text" placeholder="นามสกุล"/>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-on-surface">อีเมล</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">mail</span>
+              <input id="reg-email" class="field-input pl-10" type="email" placeholder="name@example.com"/>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-on-surface">เบอร์โทรศัพท์</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">phone</span>
+              <input id="reg-phone" class="field-input pl-10" type="tel" placeholder="0812345678"/>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-on-surface">วันเกิด</label>
+            <input id="reg-dob" class="field-input" type="date"/>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-on-surface">รหัสผ่าน</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">key</span>
+              <input id="reg-password" class="field-input pl-10 pr-10" type="password" placeholder="อย่างน้อย 8 ตัวอักษร"/>
+              <button type="button" onclick="togglePwd('reg-password',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant hover:text-primary">
+                <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-on-surface">ยืนยันรหัสผ่าน</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">key</span>
+              <input id="reg-confirm" class="field-input pl-10 pr-10" type="password" placeholder="พิมพ์รหัสผ่านอีกครั้ง"/>
+              <button type="button" onclick="togglePwd('reg-confirm',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant hover:text-primary">
+                <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+              </button>
+            </div>
+          </div>
+          <button id="reg-btn" onclick="handleRegister()" class="w-full bg-primary text-white py-3 rounded-xl font-semibold text-sm flex justify-center items-center gap-2 hover:bg-[#00497d] transition-colors mt-1">
+            <span>สมัครสมาชิก</span>
+            <span class="material-symbols-outlined text-[20px]">person_add</span>
+          </button>
+        </div>
+        <div class="mt-5 text-center text-sm text-on-surface-variant">
+          มีบัญชีแล้ว?
+          <button onclick="navigate('page-login')" class="text-primary font-semibold ml-1 hover:underline">เข้าสู่ระบบ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== PAGE: DASHBOARD ======================================================== -->
+    <div id="page-dashboard" class="page flex-col min-h-screen bg-surface-container-low">
+      <div class="p-6 max-w-5xl mx-auto w-full flex flex-col gap-6">
+        <header>
+          <h1 class="text-[26px] font-bold text-on-surface">สวัสดีคุณ <span id="dash-name">สมชาย</span> 👋</h1>
+          <p class="text-on-surface-variant text-sm mt-1 flex items-center gap-2">
+            <span class="live-dot"></span> ภาพรวมระบบ · อัปเดตอัตโนมัติ
+          </p>
+        </header>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="stat-card bg-surface-container-lowest rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-on-surface-variant">สมาชิกทั้งหมด</span>
+              <div class="w-9 h-9 rounded-xl bg-primary-fixed flex items-center justify-center">
+                <span class="material-symbols-outlined text-on-primary-fixed-variant text-[20px]">group</span>
+              </div>
+            </div>
+            <p id="stat-members" class="text-[32px] font-bold text-on-surface leading-none">—</p>
+            <p class="text-xs text-primary font-medium mt-2 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">database</span> จาก Google Sheets
+            </p>
+          </div>
+          <div class="stat-card bg-surface-container-lowest rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-on-surface-variant">เข้าสู่ระบบวันนี้</span>
+              <div class="w-9 h-9 rounded-xl bg-success-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-success text-[20px]">login</span>
+              </div>
+            </div>
+            <p id="stat-logins" class="text-[32px] font-bold text-on-surface leading-none">—</p>
+            <p class="text-xs text-success font-medium mt-2 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">today</span> วันนี้
+            </p>
+          </div>
+          <div class="stat-card bg-surface-container-lowest rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-on-surface-variant">สถานะระบบ</span>
+              <div class="w-9 h-9 rounded-xl bg-success-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-success text-[20px]">check_circle</span>
+              </div>
+            </div>
+            <p id="stat-status" class="text-[26px] font-bold text-on-surface leading-none">ปกติ</p>
+            <p class="text-xs text-on-surface-variant font-medium mt-2" id="stat-time">—</p>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-surface-container">
+            <h2 class="text-base font-semibold text-on-surface">กิจกรรมล่าสุด</h2>
+            <button onclick="loadLogs()" class="text-xs text-primary font-medium flex items-center gap-1 hover:underline">
+              <span class="material-symbols-outlined text-[16px]">refresh</span> รีเฟรช
+            </button>
+          </div>
+          <div id="activity-list" class="flex flex-col divide-y divide-surface-container">
+            <div class="px-5 py-4 text-sm text-on-surface-variant">กำลังโหลด...</div>
+          </div>
+          <div class="px-5 py-3 bg-surface-bright flex justify-center">
+            <button onclick="navigate('page-config')" class="text-sm text-primary font-medium hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-[16px]">open_in_new</span> ดูทั้งหมดใน Google Sheets
+            </button>
+          </div>
+        </div>
+
+        <!-- Sheet URL shortcut -->
+        <div id="dash-sheet-link-wrap" class="hidden">
+          <a id="dash-sheet-link" href="#" target="_blank" class="flex items-center gap-2 text-sm text-primary font-medium px-4 py-2.5 bg-primary-fixed rounded-xl w-fit hover:bg-primary-fixed-dim transition-colors">
+            <span class="material-symbols-outlined text-[18px]">table_chart</span> เปิด Google Sheet โดยตรง
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== PAGE: PROFILE ======================================================== -->
+    <div id="page-profile" class="page flex-col min-h-screen bg-surface-container-low">
+      <div class="p-6 max-w-3xl mx-auto w-full flex flex-col gap-5">
+        <h1 class="text-[22px] font-bold text-on-surface">โปรไฟล์ของฉัน</h1>
+
+        <!-- Profile card -->
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+          <div class="h-20 bg-primary-container/20 relative">
+            <div class="absolute -bottom-10 left-6">
+              <div class="w-20 h-20 rounded-full bg-primary-fixed border-4 border-surface-container-lowest flex items-center justify-center shadow-sm">
+                <span class="material-symbols-outlined text-4xl text-on-primary-fixed-variant mat-fill">person</span>
+              </div>
+            </div>
+          </div>
+          <div class="pt-12 px-6 pb-5">
+            <h2 id="prof-name" class="text-xl font-bold text-on-surface">—</h2>
+            <p id="prof-email" class="text-sm text-on-surface-variant mt-0.5 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[16px]">mail</span> —
+            </p>
+            <div class="flex gap-2 mt-3 flex-wrap">
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-semibold">
+                <span class="material-symbols-outlined text-[14px]">star</span> สมาชิกพรีเมียม
+              </span>
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-success-container text-success text-xs font-semibold">
+                <span class="material-symbols-outlined text-[14px]">verified</span> ยืนยันแล้ว
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit form -->
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm">
+          <div class="flex justify-between items-center px-6 py-4 border-b border-surface-container">
+            <h2 class="font-semibold text-on-surface">ข้อมูลส่วนตัว</h2>
+            <button id="prof-edit-btn" onclick="toggleProfileEdit()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-container text-on-surface text-sm font-medium hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-[17px]">edit</span> แก้ไข
+            </button>
+          </div>
+          <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">ชื่อจริง</label>
+              <input id="prof-firstname" class="field-input" type="text" disabled/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">นามสกุล</label>
+              <input id="prof-lastname" class="field-input" type="text" disabled/>
+            </div>
+            <div class="sm:col-span-2 flex flex-col gap-1">
+              <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">อีเมล</label>
+              <input id="prof-email-field" class="field-input" type="email" disabled/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">เบอร์โทร</label>
+              <input id="prof-phone" class="field-input" type="tel" disabled/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">วันเกิด</label>
+              <input id="prof-dob" class="field-input" type="date" disabled/>
+            </div>
+            <div id="prof-save-wrap" class="sm:col-span-2 hidden">
+              <button id="prof-save-btn" onclick="saveProfile()" class="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-[#00497d] transition-colors">
+                <span class="material-symbols-outlined text-[18px]">save</span> บันทึก
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== PAGE: SETTINGS ======================================================== -->
+    <div id="page-settings" class="page flex-col min-h-screen bg-surface-container-low">
+      <div class="p-6 max-w-3xl mx-auto w-full flex flex-col gap-5">
+        <h1 class="text-[22px] font-bold text-on-surface">การตั้งค่า</h1>
+
+        <!-- Change password -->
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+          <div class="flex items-center gap-3 px-6 py-4 border-b border-surface-container">
+            <span class="material-symbols-outlined text-primary">lock</span>
+            <h2 class="font-semibold text-on-surface">เปลี่ยนรหัสผ่าน</h2>
+          </div>
+          <div class="p-6 flex flex-col gap-4 max-w-md">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-on-surface-variant">รหัสผ่านปัจจุบัน</label>
+              <input id="set-curr-pwd" class="field-input" type="password" placeholder="••••••••"/>
+            </div>
+            <div class="border-t border-surface-variant"></div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-on-surface-variant">รหัสผ่านใหม่</label>
+              <input id="set-new-pwd" class="field-input" type="password" placeholder="อย่างน้อย 8 ตัวอักษร"/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-on-surface-variant">ยืนยันรหัสผ่านใหม่</label>
+              <input id="set-confirm-pwd" class="field-input" type="password" placeholder="พิมพ์รหัสผ่านอีกครั้ง"/>
+            </div>
+            <button onclick="handleChangePassword()" class="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 w-fit hover:bg-[#00497d] transition-colors">
+              <span class="material-symbols-outlined text-[18px]">save</span> บันทึกรหัสผ่าน
+            </button>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-surface-container">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary">notifications</span>
+              <h2 class="font-semibold text-on-surface">การแจ้งเตือน</h2>
+            </div>
+            <button id="notif-save-btn" onclick="saveNotifications()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-[#00497d] transition-colors">
+              <span class="material-symbols-outlined text-[15px]">cloud_upload</span> บันทึกลง Sheet
+            </button>
+          </div>
+          <div class="flex flex-col divide-y divide-surface-container">
+            <div class="px-6 py-4 flex items-center justify-between hover:bg-surface-bright transition-colors">
+              <div>
+                <p class="text-sm font-medium text-on-surface">อีเมลแจ้งเตือนระบบ</p>
+                <p class="text-xs text-on-surface-variant mt-0.5">รับอีเมลเมื่อมีการอัปเดตหรือความปลอดภัย</p>
+              </div>
+              <div id="toggle-system" class="toggle-track on" onclick="this.classList.toggle('on')">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="px-6 py-4 flex items-center justify-between hover:bg-surface-bright transition-colors">
+              <div>
+                <p class="text-sm font-medium text-on-surface">การแจ้งเตือนกิจกรรม</p>
+                <p class="text-xs text-on-surface-variant mt-0.5">แจ้งเตือนเมื่อมีการเคลื่อนไหวในบัญชี</p>
+              </div>
+              <div id="toggle-activity" class="toggle-track on" onclick="this.classList.toggle('on')">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="px-6 py-4 flex items-center justify-between hover:bg-surface-bright transition-colors">
+              <div>
+                <p class="text-sm font-medium text-on-surface">ข้อเสนอและโปรโมชั่น</p>
+                <p class="text-xs text-on-surface-variant mt-0.5">รับข้อมูลข่าวสารและสิทธิพิเศษจากเรา</p>
+              </div>
+              <div id="toggle-promo" class="toggle-track" onclick="this.classList.toggle('on')">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+          </div>
+          <div id="notif-saved-badge" class="hidden px-6 py-3 bg-success-container/40 flex items-center gap-2 text-xs text-success font-semibold border-t border-surface-container">
+            <span class="material-symbols-outlined text-[15px]">check_circle</span>
+            บันทึกการตั้งค่าลง Google Sheets แล้ว
+          </div>
+        </div>
+
+        <!-- Danger zone -->
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden border border-error-container">
+          <div class="flex items-center gap-3 px-6 py-4 border-b border-error-container">
+            <span class="material-symbols-outlined text-error">warning</span>
+            <h2 class="font-semibold text-error">โซนอันตราย</h2>
+          </div>
+          <div class="p-6">
+            <p class="text-sm text-on-surface-variant mb-4">การดำเนินการด้านล่างไม่สามารถย้อนกลับได้ กรุณาใช้ความระมัดระวัง</p>
+            <button onclick="showToast('ฟีเจอร์นี้ยังไม่เปิดใช้งาน','warning')" class="px-5 py-2.5 rounded-xl border border-error text-error text-sm font-semibold hover:bg-error-container transition-colors">
+              ลบบัญชีผู้ใช้
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== PAGE: CONFIG ======================================================== -->
+    <div id="page-config" class="page flex-col min-h-screen bg-surface-container-low">
+      <div class="p-6 max-w-3xl mx-auto w-full flex flex-col gap-5">
+        <h1 class="text-[22px] font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">integration_instructions</span>
+          ตั้งค่าเชื่อมต่อ Google Sheet
+        </h1>
+
+        <!-- Config form -->
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-surface-container">
+            <h2 class="font-semibold text-on-surface">Google Apps Script URL</h2>
+            <p class="text-sm text-on-surface-variant mt-0.5">ใส่ Web App URL ที่ได้จาก Google Apps Script</p>
+          </div>
+          <div class="p-6 flex flex-col gap-4">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-on-surface">Script URL</label>
+              <input id="cfg-script-url" class="field-input font-mono text-sm" type="url"
+                placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+                oninput="saveConfig()"/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-on-surface">Google Sheet URL (สำหรับลิงก์โดยตรง)</label>
+              <input id="cfg-sheet-url" class="field-input font-mono text-sm" type="url"
+                placeholder="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit"
+                oninput="saveConfig()"/>
+            </div>
+            <div id="cfg-status" class="hidden"></div>
+            <button onclick="testConnection()" class="w-fit flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-[#00497d] transition-colors">
+              <span class="material-symbols-outlined text-[18px]">wifi_tethering</span> ทดสอบการเชื่อมต่อ
+            </button>
+          </div>
+        </div>
+
+        <!-- How-to guide -->
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+          <div class="flex items-center gap-3 px-6 py-4 border-b border-surface-container">
+            <span class="material-symbols-outlined text-primary">menu_book</span>
+            <h2 class="font-semibold text-on-surface">วิธีสร้าง Google Apps Script</h2>
+          </div>
+          <div class="p-6 flex flex-col gap-4 text-sm text-on-surface-variant">
+            <ol class="list-none flex flex-col gap-3">
+              <li class="flex gap-3">
+                <span class="w-6 h-6 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                <span>เปิด <a href="https://sheets.google.com" target="_blank" class="text-primary hover:underline">Google Sheets</a> สร้างไฟล์ใหม่ แล้วตั้งชื่อ Sheet 4 แท็บ ว่า <code class="bg-surface-container px-1.5 py-0.5 rounded text-on-surface font-mono">Members</code>, <code class="bg-surface-container px-1.5 py-0.5 rounded text-on-surface font-mono">Profiles</code>, <code class="bg-surface-container px-1.5 py-0.5 rounded text-on-surface font-mono">LoginLogs</code>, <code class="bg-surface-container px-1.5 py-0.5 rounded text-on-surface font-mono">Notifications</code></span>
+              </li>
+              <li class="flex gap-3">
+                <span class="w-6 h-6 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                <span>ไปที่เมนู <strong class="text-on-surface">ส่วนขยาย → Apps Script</strong> แล้ววางโค้ดด้านล่างลงไป</span>
+              </li>
+              <li class="flex gap-3">
+                <span class="w-6 h-6 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                <span>กด <strong class="text-on-surface">Deploy → New deployment</strong> เลือกประเภท <em>Web app</em>, Execute as: <em>Me</em>, Who has access: <em>Anyone</em></span>
+              </li>
+              <li class="flex gap-3">
+                <span class="w-6 h-6 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</span>
+                <span>Copy Web App URL มาวางในช่องด้านบน</span>
+              </li>
+            </ol>
+
+            <!-- Code block -->
+            <div class="mt-2">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-on-surface uppercase tracking-wide">Google Apps Script Code</span>
+                <button onclick="copyCode()" class="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+                  <span class="material-symbols-outlined text-[14px]">content_copy</span> คัดลอก
+                </button>
+              </div>
+              <pre id="apps-script-code" class="bg-inverse-surface text-inverse-on-surface rounded-xl p-4 text-xs overflow-x-auto leading-relaxed font-mono">
+// ============================================================
+//  Google Apps Script สำหรับ MemberApp
+//  วางในไฟล์ Code.gs แล้ว Deploy เป็น Web App
+// ============================================================
+
+const SHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
+
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const action = data.action;
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let result = { success: false };
+
+  try {
+    if (action === 'register') {
+      // บันทึกข้อมูลสมัครสมาชิก
+      const sheet = ss.getSheetByName('Members') || ss.insertSheet('Members');
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['Timestamp','FirstName','LastName','Email','Phone','DOB','PasswordHash']);
+      }
+      // ⚠️ ในระบบจริงควร hash รหัสผ่านฝั่ง Server ก่อนบันทึก
+      sheet.appendRow([
+        new Date().toLocaleString('th-TH'),
+        data.firstName, data.lastName, data.email,
+        data.phone, data.dob, data.password
+      ]);
+      result = { success: true, message: 'สมัครสมาชิกสำเร็จ' };
+
+    } else if (action === 'login_log') {
+      // บันทึก Login Log
+      const sheet = ss.getSheetByName('LoginLogs') || ss.insertSheet('LoginLogs');
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['Timestamp','Email','Status','UserAgent']);
+      }
+      sheet.appendRow([
+        new Date().toLocaleString('th-TH'),
+        data.email, data.status, data.userAgent
+      ]);
+      result = { success: true };
+
+    } else if (action === 'save_notifications') {
+      // บันทึกการตั้งค่าการแจ้งเตือน
+      const sheet = ss.getSheetByName('Notifications') || ss.insertSheet('Notifications');
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['Email','SystemEmail','ActivityAlert','Promotions','UpdatedAt']);
+      }
+      // Upsert: ค้นหาอีเมลเดิมก่อน
+      const vals = sheet.getDataRange().getValues();
+      let found = false;
+      for (let i = 1; i < vals.length; i++) {
+        if (vals[i][0] === data.email) {
+          sheet.getRange(i + 1, 1, 1, 5).setValues([[
+            data.email, data.systemEmail, data.activityAlert,
+            data.promotions, new Date().toLocaleString('th-TH')
+          ]]);
+          found = true; break;
+        }
+      }
+      if (!found) {
+        sheet.appendRow([
+          data.email, data.systemEmail, data.activityAlert,
+          data.promotions, new Date().toLocaleString('th-TH')
+        ]);
+      }
+      result = { success: true, message: 'บันทึกการแจ้งเตือนสำเร็จ' };
+
+    } else if (action === 'save_profile') {
+      // บันทึก/อัปเดตโปรไฟล์
+      const sheet = ss.getSheetByName('Profiles') || ss.insertSheet('Profiles');
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['Email','FirstName','LastName','Phone','DOB','UpdatedAt']);
+      }
+      // ค้นหาแถวที่มีอีเมลนี้อยู่แล้ว
+      const values = sheet.getDataRange().getValues();
+      let found = false;
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][0] === data.email) {
+          sheet.getRange(i + 1, 1, 1, 6).setValues([[
+            data.email, data.firstName, data.lastName,
+            data.phone, data.dob, new Date().toLocaleString('th-TH')
+          ]]);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        sheet.appendRow([
+          data.email, data.firstName, data.lastName,
+          data.phone, data.dob, new Date().toLocaleString('th-TH')
+        ]);
+      }
+      result = { success: true, message: 'บันทึกโปรไฟล์สำเร็จ' };
+    }
+  } catch (err) {
+    result = { success: false, message: err.toString() };
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  const action = e.parameter.action;
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let result = {};
+
+  if (action === 'stats') {
+    const members = ss.getSheetByName('Members');
+    const logs = ss.getSheetByName('LoginLogs');
+    const memberCount = members ? Math.max(0, members.getLastRow() - 1) : 0;
+
+    let todayLogins = 0;
+    if (logs && logs.getLastRow() > 1) {
+      const today = new Date().toLocaleDateString('th-TH');
+      const logData = logs.getDataRange().getValues();
+      for (let i = 1; i < logData.length; i++) {
+        const rowDate = new Date(logData[i][0]).toLocaleDateString('th-TH');
+        if (rowDate === today && logData[i][2] === 'success') todayLogins++;
+      }
+    }
+    result = { success: true, memberCount, todayLogins };
+
+  } else if (action === 'recent_logs') {
+    const logs = ss.getSheetByName('LoginLogs');
+    const rows = [];
+    if (logs && logs.getLastRow() > 1) {
+      const data = logs.getDataRange().getValues();
+      const recent = data.slice(1).reverse().slice(0, 10);
+      recent.forEach(r => rows.push({
+        timestamp: r[0], email: r[1], status: r[2]
+      }));
+    }
+    result = { success: true, logs: rows };
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+              </pre>
+            </div>
+
+            <div class="callout p-4 rounded-r-xl">
+              <p class="text-xs font-semibold text-amber-800 flex items-center gap-1 mb-1">
+                <span class="material-symbols-outlined text-[15px]">security</span> ข้อควรระวัง
+              </p>
+              <p class="text-xs text-amber-700">ในระบบ Production จริงควร hash รหัสผ่านก่อนบันทึก และเพิ่มการยืนยันตัวตน (เช่น Firebase Auth) แทนการส่งรหัสผ่านตรงๆ โค้ดนี้เหมาะสำหรับ Demo/Learning เท่านั้น</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ====================================================================== JAVASCRIPT ====================================================================== -->
+<script>
+// ============================================================
+//  CONFIG & STATE
+// ============================================================
+let CONFIG = {
+  scriptUrl: localStorage.getItem('scriptUrl') || '',
+  sheetUrl: localStorage.getItem('sheetUrl') || '',
+};
+
+let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+// ============================================================
+//  INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('cfg-script-url').value = CONFIG.scriptUrl;
+  document.getElementById('cfg-sheet-url').value = CONFIG.sheetUrl;
+
+  if (CONFIG.sheetUrl) {
+    document.getElementById('dash-sheet-link').href = CONFIG.sheetUrl;
+    document.getElementById('dash-sheet-link-wrap').classList.remove('hidden');
+  }
+
+  if (currentUser) {
+    fillUserData(currentUser);
+  }
+
+  navigate('page-login');
+  loadDashboard();
+});
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function navigate(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById(pageId);
+  if (page) {
+    page.classList.add('active');
+    void page.offsetHeight; // force reflow for animation
+  }
+
+  // Sync nav highlight
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    const target = btn.getAttribute('data-page');
+    btn.classList.toggle('active', target === pageId);
+    btn.classList.toggle('bg-secondary-container', target === pageId);
+    btn.classList.toggle('text-on-surface', target === pageId);
+    btn.classList.toggle('text-on-surface-variant', target !== pageId);
+    btn.classList.toggle('font-bold', target === pageId);
+  });
+}
+
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  const overlay = document.getElementById('mobile-overlay');
+  const isOpen = menu.style.transform === 'translateX(0px)' || menu.style.transform === 'translateX(0%)';
+  menu.style.transform = isOpen ? 'translateX(-100%)' : 'translateX(0%)';
+  overlay.classList.toggle('hidden', isOpen);
+}
+
+// ============================================================
+//  TOAST
+// ============================================================
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  const icon = document.getElementById('toast-icon');
+  const msgEl = document.getElementById('toast-msg');
+
+  const themes = {
+    success: 'bg-inverse-surface text-inverse-on-surface',
+    error:   'bg-error-container text-on-error-container',
+    warning: 'bg-[#fff8e1] text-amber-800',
+    info:    'bg-primary-fixed text-on-primary-fixed',
+  };
+  const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+
+  toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium min-w-[260px] max-w-sm ${themes[type]}`;
+  icon.textContent = icons[type] || 'info';
+  msgEl.textContent = msg;
+
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+// ============================================================
+//  PASSWORD TOGGLE
+// ============================================================
+function togglePwd(fieldId, btn) {
+  const input = document.getElementById(fieldId);
+  const span = btn.querySelector('.material-symbols-outlined');
+  if (input.type === 'password') {
+    input.type = 'text';
+    span.textContent = 'visibility';
+  } else {
+    input.type = 'password';
+    span.textContent = 'visibility_off';
+  }
+}
+
+// ============================================================
+//  GOOGLE SHEET API CALL
+// ============================================================
+async function callScript(data) {
+  if (!CONFIG.scriptUrl) {
+    showToast('กรุณาตั้งค่า Google Apps Script URL ก่อน', 'warning');
+    navigate('page-config');
+    return null;
+  }
+  try {
+    const res = await fetch(CONFIG.scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(data)
+    });
+    return await res.json();
+  } catch (e) {
+    console.error(e);
+    showToast('เชื่อมต่อ Google Sheet ไม่สำเร็จ', 'error');
+    return null;
+  }
+}
+
+async function getScript(params) {
+  if (!CONFIG.scriptUrl) return null;
+  try {
+    const qs = new URLSearchParams(params).toString();
+    const res = await fetch(`${CONFIG.scriptUrl}?${qs}`);
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+// ============================================================
+//  LOGIN
+// ============================================================
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  if (!email || !password) {
+    showToast('กรุณากรอกอีเมลและรหัสผ่าน', 'error'); return;
+  }
+
+  const btn = document.getElementById('login-btn');
+  setLoading(btn, true);
+
+  // บันทึก Login Log ลง Google Sheet
+  const result = await callScript({
+    action: 'login_log',
+    email,
+    status: 'success',
+    userAgent: navigator.userAgent.slice(0, 100)
+  });
+
+  setLoading(btn, false);
+
+  // จำลอง user session (ในระบบจริงควรตรวจสอบกับ backend)
+  const user = { email, firstName: 'สมชาย', lastName: 'ใจดี', phone: '', dob: '' };
+  localStorage.setItem('currentUser', JSON.stringify(user));
+  currentUser = user;
+  fillUserData(user);
+
+  if (result?.success || result === null) {
+    showToast(result ? 'เข้าสู่ระบบสำเร็จ ✓ บันทึก Log แล้ว' : 'เข้าสู่ระบบสำเร็จ (offline)', 'success');
+  }
+
+  navigate('page-dashboard');
+  loadDashboard();
+}
+
+// ============================================================
+//  REGISTER
+// ============================================================
+async function handleRegister() {
+  const firstName = document.getElementById('reg-firstname').value.trim();
+  const lastName  = document.getElementById('reg-lastname').value.trim();
+  const email     = document.getElementById('reg-email').value.trim();
+  const phone     = document.getElementById('reg-phone').value.trim();
+  const dob       = document.getElementById('reg-dob').value;
+  const password  = document.getElementById('reg-password').value;
+  const confirm   = document.getElementById('reg-confirm').value;
+
+  if (!firstName || !lastName || !email || !password) {
+    showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return;
+  }
+  if (password.length < 8) {
+    showToast('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร', 'error'); return;
+  }
+  if (password !== confirm) {
+    showToast('รหัสผ่านไม่ตรงกัน', 'error'); return;
+  }
+
+  const btn = document.getElementById('reg-btn');
+  setLoading(btn, true);
+
+  const result = await callScript({
+    action: 'register', firstName, lastName, email, phone, dob, password
+  });
+
+  setLoading(btn, false);
+
+  if (result?.success) {
+    showToast('สมัครสมาชิกสำเร็จ! บันทึกลง Google Sheets แล้ว', 'success');
+    const user = { email, firstName, lastName, phone, dob };
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    currentUser = user;
+    fillUserData(user);
+    navigate('page-login');
+  } else if (result) {
+    showToast(result.message || 'เกิดข้อผิดพลาด', 'error');
+  }
+}
+
+// ============================================================
+//  PROFILE
+// ============================================================
+function fillUserData(user) {
+  if (!user) return;
+  document.getElementById('dash-name').textContent = user.firstName || 'ผู้ใช้';
+  document.getElementById('prof-name').textContent = `${user.firstName || ''} ${user.lastName || ''}`.trim() || '—';
+  document.getElementById('prof-email').innerHTML = `<span class="material-symbols-outlined text-[16px]">mail</span> ${user.email || '—'}`;
+  document.getElementById('prof-firstname').value = user.firstName || '';
+  document.getElementById('prof-lastname').value  = user.lastName  || '';
+  document.getElementById('prof-email-field').value = user.email  || '';
+  document.getElementById('prof-phone').value    = user.phone    || '';
+  document.getElementById('prof-dob').value      = user.dob      || '';
+}
+
+let profileEditing = false;
+function toggleProfileEdit() {
+  profileEditing = !profileEditing;
+  const fields = ['prof-firstname','prof-lastname','prof-phone','prof-dob'];
+  fields.forEach(id => document.getElementById(id).disabled = !profileEditing);
+  document.getElementById('prof-save-wrap').classList.toggle('hidden', !profileEditing);
+  document.getElementById('prof-edit-btn').innerHTML = profileEditing
+    ? '<span class="material-symbols-outlined text-[17px]">close</span> ยกเลิก'
+    : '<span class="material-symbols-outlined text-[17px]">edit</span> แก้ไข';
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('prof-save-btn');
+  const data = {
+    action: 'save_profile',
+    email:     document.getElementById('prof-email-field').value,
+    firstName: document.getElementById('prof-firstname').value.trim(),
+    lastName:  document.getElementById('prof-lastname').value.trim(),
+    phone:     document.getElementById('prof-phone').value.trim(),
+    dob:       document.getElementById('prof-dob').value,
+  };
+
+  setLoading(btn, true);
+  const result = await callScript(data);
+  setLoading(btn, false);
+
+  if (result?.success || result === null) {
+    localStorage.setItem('currentUser', JSON.stringify({...currentUser, ...data}));
+    currentUser = {...currentUser, ...data};
+    fillUserData(currentUser);
+    toggleProfileEdit();
+    showToast(result ? 'บันทึกโปรไฟล์สำเร็จ ✓' : 'บันทึกสำเร็จ (offline)', 'success');
+  } else if (result) {
+    showToast(result.message || 'บันทึกไม่สำเร็จ', 'error');
+  }
+}
+
+// ============================================================
+//  NOTIFICATIONS
+// ============================================================
+async function saveNotifications() {
+  const email = currentUser?.email || 'guest';
+  const btn = document.getElementById('notif-save-btn');
+  setLoading(btn, true);
+
+  const result = await callScript({
+    action: 'save_notifications',
+    email,
+    systemEmail:   document.getElementById('toggle-system').classList.contains('on'),
+    activityAlert: document.getElementById('toggle-activity').classList.contains('on'),
+    promotions:    document.getElementById('toggle-promo').classList.contains('on'),
+  });
+
+  setLoading(btn, false);
+  btn.innerHTML = '<span class="material-symbols-outlined text-[15px]">cloud_upload</span> บันทึกลง Sheet';
+
+  if (result?.success || result === null) {
+    const badge = document.getElementById('notif-saved-badge');
+    badge.classList.remove('hidden');
+    setTimeout(() => badge.classList.add('hidden'), 4000);
+    showToast(result ? 'บันทึกการตั้งค่าแจ้งเตือนลง Sheets แล้ว ✓' : 'บันทึกสำเร็จ (offline)', 'success');
+  } else if (result) {
+    showToast(result.message || 'บันทึกไม่สำเร็จ', 'error');
+  }
+}
+
+
+function handleChangePassword() {
+  const curr = document.getElementById('set-curr-pwd').value;
+  const newP  = document.getElementById('set-new-pwd').value;
+  const conf  = document.getElementById('set-confirm-pwd').value;
+
+  if (!curr || !newP) { showToast('กรุณากรอกข้อมูลให้ครบ','error'); return; }
+  if (newP.length < 8) { showToast('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร','error'); return; }
+  if (newP !== conf)   { showToast('รหัสผ่านใหม่ไม่ตรงกัน','error'); return; }
+
+  showToast('เปลี่ยนรหัสผ่านสำเร็จ ✓ (Demo - ในระบบจริงต้องยืนยันกับ backend)', 'success');
+  ['set-curr-pwd','set-new-pwd','set-confirm-pwd'].forEach(id => document.getElementById(id).value = '');
+}
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  const now = new Date();
+  document.getElementById('stat-time').textContent = 'อัปเดต ' + now.toLocaleTimeString('th-TH');
+
+  const data = await getScript({ action: 'stats' });
+  if (data?.success) {
+    document.getElementById('stat-members').textContent = data.memberCount.toLocaleString();
+    document.getElementById('stat-logins').textContent  = data.todayLogins.toLocaleString();
+  } else {
+    document.getElementById('stat-members').textContent = '—';
+    document.getElementById('stat-logins').textContent  = '—';
+  }
+
+  await loadLogs();
+}
+
+async function loadLogs() {
+  const list = document.getElementById('activity-list');
+  list.innerHTML = '<div class="px-5 py-4 text-sm text-on-surface-variant">กำลังโหลด...</div>';
+
+  const data = await getScript({ action: 'recent_logs' });
+
+  if (data?.success && data.logs.length > 0) {
+    list.innerHTML = data.logs.map(log => `
+      <div class="flex items-center gap-4 px-5 py-3">
+        <div class="w-9 h-9 rounded-full ${log.status === 'success' ? 'bg-success-container' : 'bg-error-container'} flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[18px] ${log.status === 'success' ? 'text-success' : 'text-error'}">
+            ${log.status === 'success' ? 'login' : 'error'}
+          </span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-on-surface truncate">${log.email}</p>
+          <p class="text-xs text-on-surface-variant">เข้าสู่ระบบ · ${log.status === 'success' ? 'สำเร็จ' : 'ล้มเหลว'}</p>
+        </div>
+        <p class="text-xs text-outline whitespace-nowrap">${log.timestamp}</p>
+      </div>`).join('<div class="border-t border-surface-container mx-5"></div>');
+  } else if (data?.success && data.logs.length === 0) {
+    list.innerHTML = '<div class="px-5 py-5 text-sm text-on-surface-variant text-center">ยังไม่มีกิจกรรม</div>';
+  } else {
+    list.innerHTML = `<div class="px-5 py-4 text-sm text-on-surface-variant flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px] text-outline">cloud_off</span>
+      ยังไม่ได้เชื่อมต่อ Google Sheet
+      <button onclick="navigate('page-config')" class="text-primary font-medium ml-1 hover:underline">ตั้งค่า</button>
+    </div>`;
+  }
+}
+
+// ============================================================
+//  CONFIG
+// ============================================================
+function saveConfig() {
+  CONFIG.scriptUrl = document.getElementById('cfg-script-url').value.trim();
+  CONFIG.sheetUrl  = document.getElementById('cfg-sheet-url').value.trim();
+  localStorage.setItem('scriptUrl', CONFIG.scriptUrl);
+  localStorage.setItem('sheetUrl', CONFIG.sheetUrl);
+
+  if (CONFIG.sheetUrl) {
+    document.getElementById('dash-sheet-link').href = CONFIG.sheetUrl;
+    document.getElementById('dash-sheet-link-wrap').classList.remove('hidden');
+  }
+}
+
+async function testConnection() {
+  if (!CONFIG.scriptUrl) { showToast('กรุณาใส่ Script URL ก่อน','warning'); return; }
+  const statusEl = document.getElementById('cfg-status');
+  statusEl.className = 'flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-surface-container text-on-surface-variant';
+  statusEl.innerHTML = '<span class="spinner" style="border-top-color:#0061a4;border-color:rgba(0,97,164,0.2)"></span> กำลังทดสอบ...';
+  statusEl.classList.remove('hidden');
+
+  const data = await getScript({ action: 'stats' });
+  if (data?.success) {
+    statusEl.className = 'flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-success-container text-success';
+    statusEl.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span> เชื่อมต่อสำเร็จ! พบข้อมูลสมาชิก ' + data.memberCount + ' คน';
+    showToast('เชื่อมต่อ Google Sheet สำเร็จ', 'success');
+  } else {
+    statusEl.className = 'flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-error-container text-error';
+    statusEl.innerHTML = '<span class="material-symbols-outlined text-[18px]">error</span> เชื่อมต่อไม่สำเร็จ ตรวจสอบ URL และสิทธิ์การ Deploy';
+  }
+}
+
+function copyCode() {
+  const code = document.getElementById('apps-script-code').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('คัดลอกโค้ดแล้ว ✓','success'));
+}
+
+// ============================================================
+//  UTIL
+// ============================================================
+function setLoading(btn, loading) {
+  if (loading) {
+    btn.disabled = true;
+    btn.dataset.orig = btn.innerHTML;
+    btn.innerHTML = `<span class="spinner"></span> กำลังดำเนินการ...`;
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.orig || btn.innerHTML;
+  }
+}
+</script>
+</body>
+</html>
